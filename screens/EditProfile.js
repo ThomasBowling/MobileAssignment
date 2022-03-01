@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, Button } from 'react-native';
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-class SignupScreen extends Component{
+class EditProfileScreen extends Component{
     constructor(props){
         super(props);
 
@@ -12,29 +12,13 @@ class SignupScreen extends Component{
 			last_name: "",
             email: "",
             password: "",
-			errorFirst: "",
-			errorLast: "",
 			errorEmail: "",
 			errorPass: ""
         }
     }
 
-    signup = async () => {
+    updateaccount = async () => {
 		let errorBool = false;
-		if(this.state.first_name.length == 0){
-			this.setState({ errorFirst: "First name field can't be empty"});
-			errorBool = true;
-		}
-		else{
-			this.setState({ errorFirst: ""});
-		}
-		if(this.state.last_name.length == 0){
-			this.setState({ errorLast: "Last name field can't be empty"});
-			errorBool = true;
-		}
-		else{
-			this.setState({ errorPass: ""});
-		}
 		//Regex Expression from https://www.w3resource.com/javascript/form/email-validation.php
 		if (!(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(this.state.email))){
 			this.setState({ errorEmail: "Email is invalid"});
@@ -59,25 +43,29 @@ class SignupScreen extends Component{
 				password: this.state.password
 			}
 			
-			return fetch("http://localhost:3333/api/1.0.0/user", {
-				method: 'POST',
+			const token = await AsyncStorage.getItem('@session_token');
+			const user_id = await AsyncStorage.getItem('@user_id');
+			return fetch("http://localhost:3333/api/1.0.0/user/" + user_id, {
+				method: 'PATCH',
 				headers: {
-					'Content-Type': 'application/json'
+					'X-Authorization':  token,
+					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify(this.data)
 			})
 			.then((response) => {
-				if(response.status === 201){
-					return response.json()
+				if(response.status === 200){
+					return 'OK';
 				}else if(response.status === 400){
 					throw 'Bad Request';
+				}else if(response.status === 401){
+					throw 'Unauthorised';				
 				}else{
 					throw 'Something went wrong';
 				}
 			})
 			.then(async (responseJson) => {
-					console.log(responseJson);
-					this.props.navigation.navigate("Login");
+					this.props.navigation.navigate("ProfileStack");
 			})
 			.catch((error) => {
 				console.log(error);
@@ -121,43 +109,28 @@ class SignupScreen extends Component{
 					secureTextEntry
 				/>
 				<Text style = {styles.Error}>{this.state.errorPass}</Text>
-							
+				
 				<Button
-					title="Create Account"
+					title="Update Account"
 					color="#383837"
-					onPress={() => this.signup()}
+					onPress={() => this.updateaccount()}
 				/>
-				<Button
-					title="Go Back"
-					color="#383837"
-					onPress={() => this.props.navigation.goBack()}
-				/>	
 			</View>
         )
     }
 }
 
-export default SignupScreen;
+export default EditProfileScreen;
 
 const styles = StyleSheet.create({
 	Container: {
 		position: 'relative',
 		top:'35%',
 		left:'35%',
-		width: '35%',
+		width: '30%',
 	},
 	
 	TextInput: {
-		fontSize: '14px',
-	},
-	
-	InputTitle: {
-		fontSize: '14px',
-		fontWeight: 'bold',
-	},
-	
-	Error: {
-		fontSize: '14px',
-		color: 'red',
+		fontSize: '16px',
 	},
 });

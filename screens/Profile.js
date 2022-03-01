@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {View, Text, FlatList, Button} from 'react-native';
+import {View, Text, FlatList, Button, Image} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class ProfileScreen extends Component
@@ -9,7 +9,8 @@ class ProfileScreen extends Component
 
     this.state = {
 			isLoading: true,
-			userData: []
+			userData: [],
+			photo: ""
 		}
 	}
 
@@ -28,7 +29,9 @@ class ProfileScreen extends Component
 		const user_id = await AsyncStorage.getItem('@user_id');
 		console.log(user_id);
 		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id, {
-			'headers': {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
 				'X-Authorization':  token
 			}
 		})
@@ -45,13 +48,38 @@ class ProfileScreen extends Component
         })
         .then((responseJson) => {
 			this.setState({
-				isLoading: false,
 				userData: responseJson
 			})
         })
         .catch((error) => {
             console.log(error);
         })
+	}
+	
+	getPhoto = async () => {
+		const token = await AsyncStorage.getItem('@session_token');
+		const user_id = await AsyncStorage.getItem('@user_id');
+		console.log(user_id);
+		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/photo", {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Authorization':  token
+			}
+		})
+		.then((res) => {
+			return res.blob();
+		})
+		.then((resBlob) => {
+			let data = URL.createObjectURL(resBlob);
+			this.setState({
+				photo: data,
+				isLoading: false
+			});
+		})
+		.catch((error) => {
+			console.log(error)
+		});
 	}
 	
 	loginCheck = async () => {
@@ -62,6 +90,7 @@ class ProfileScreen extends Component
 		}
 		else{
 			this.getData();
+			this.getPhoto();
 		}
 	};
 	
@@ -70,8 +99,9 @@ class ProfileScreen extends Component
         await AsyncStorage.removeItem('@session_token');
 		await AsyncStorage.removeItem('@user_id');
         return fetch("http://localhost:3333/api/1.0.0/logout", {
-            method: 'post',
+            method: 'POST',
             headers: {
+				'Content-Type': 'application/json',
                 "X-Authorization": token
             }
         })
@@ -100,11 +130,35 @@ class ProfileScreen extends Component
 		else{
 			return (
 				<View>
-					<Text>{this.state.userData.first_name} {this.state.userData.last_name}</Text>
-					<Button
-						title="Log out"
-						onPress={() => this.logout()}
-					/>
+					<View style={{flexDirection: "row"}}>
+						<Image source={{
+							uri: this.state.photo,
+						}}
+						style={{
+							width: 50,
+							height: 50,
+						}}/>
+						<View>
+							<Text>{this.state.userData.first_name} {this.state.userData.last_name}</Text>
+							<Text>Friend Count: </Text>
+						</View>
+					</View>
+					
+					<View style={{flexDirection: "row"}}>
+						<View style = {{flex: 1}}>
+							<Button
+								title="Log out"
+								onPress={() => this.logout()}
+							/>
+						</View>
+						
+						<View style = {{flex: 1}}>
+							<Button
+								title="Edit Profile"
+								onPress={() => this.props.navigation.navigate('EditProfile')}
+							/>
+						</View>
+					</View>
 				</View>
 			);
 		} 

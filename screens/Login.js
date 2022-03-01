@@ -36,12 +36,18 @@ class LoginScreen extends Component{
 			this.setState({ errorPass: ""});
 		}
 		if(!errorBool){
+			
+			this.data = {
+				email: this.state.email,
+				password: this.state.password
+			}
+			
 			return fetch("http://localhost:3333/api/1.0.0/login", {
-				method: 'post',
+				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify(this.state)
+				body: JSON.stringify(this.data)
 			})
 			.then((response) => {
 				if(response.status === 200){
@@ -57,7 +63,7 @@ class LoginScreen extends Component{
 					console.log(responseJson);
 					await AsyncStorage.setItem('@session_token', responseJson.token);
 					await AsyncStorage.setItem('@user_id', responseJson.id);
-					this.props.navigation.navigate("Profile");
+					this.props.navigation.navigate("ProfileStart");
 			})
 			.catch((error) => {
 				console.log(error);
@@ -86,23 +92,18 @@ class LoginScreen extends Component{
 				/>
 				<Text style = {styles.Error}>{this.state.errorPass}</Text>
 				
-				<View style={{flexDirection: "row"}}>
-					<View style = {{flex: 1}}>
-						<Button
-							title="Login"
-							color="#383837"
-							onPress={() => this.login()}
-						/>
-					</View>
-					
-					<View style = {{flex: 1}}>
-						<Button
-							title="Sign Up"
-							color="#383837"
-							onPress={() => this.props.navigation.navigate("Signup")}
-						/>
-					</View>
-				</View>
+				<Button
+					titleStyle={{fontSize: '10px'}}
+					title="Login"
+					color="#383837"
+					onPress={() => this.login()}
+				/>
+						
+				<Button
+					title="Sign Up"
+					color="#383837"
+					onPress={() => this.props.navigation.navigate("Signup")}
+				/>
 				<Text style = {styles.Error}>{this.state.errorText}</Text>
             </View>
         )
@@ -116,18 +117,18 @@ const styles = StyleSheet.create({
 		position: 'relative',
 		top:'35%',
 		left:'35%',
-		width: '30%',
+		width: '35%',
 	},
 	
 	TextInput: {
-		fontSize: '16px',
+		fontSize: '14px',
 	},
 	InputTitle: {
-		fontSize: '16px',
+		fontSize: '14px',
 		fontWeight: 'bold',
 	},
 	Error: {
-		fontSize: '16px',
+		fontSize: '14px',
 		color: 'red',
 	},
 });
