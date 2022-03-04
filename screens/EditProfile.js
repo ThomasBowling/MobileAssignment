@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, Button } from 'react-native';
+import { Text, View, StyleSheet, Button, Image} from 'react-native';
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,10 +12,21 @@ class EditProfileScreen extends Component{
 			last_name: "",
             email: "",
             password: "",
+			photo: "",
 			errorEmail: "",
 			errorPass: ""
         }
     }
+
+	componentDidMount() {
+		this.unsubscribe = this.props.navigation.addListener('focus', () => {
+			this.getPhoto();
+		});
+	}
+
+	componentWillUnmount() {
+		this.unsubscribe();
+	}
 
     updateaccount = async () => {
 		let errorBool = false;
@@ -43,6 +54,12 @@ class EditProfileScreen extends Component{
 				password: this.state.password
 			}
 			
+			for(var entry in this.data) {
+				if(this.data[entry] === "") {
+					delete this.data[entry];
+				}
+			}
+			
 			const token = await AsyncStorage.getItem('@session_token');
 			const user_id = await AsyncStorage.getItem('@user_id');
 			return fetch("http://localhost:3333/api/1.0.0/user/" + user_id, {
@@ -65,6 +82,7 @@ class EditProfileScreen extends Component{
 				}
 			})
 			.then(async (responseJson) => {
+					console.log(this.data);
 					this.props.navigation.navigate("ProfileStack");
 			})
 			.catch((error) => {
@@ -73,10 +91,48 @@ class EditProfileScreen extends Component{
 		}
     }
 
+	getPhoto = async () => {
+		const token = await AsyncStorage.getItem('@session_token');
+		const user_id = await AsyncStorage.getItem('@user_id');
+		console.log(user_id);
+		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/photo", {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Authorization':  token
+			}
+		})
+		.then((res) => {
+			return res.blob();
+		})
+		.then((resBlob) => {
+			let data = URL.createObjectURL(resBlob);
+			this.setState({
+				photo: data
+			});
+		})
+		.catch((error) => {
+			console.log(error)
+		});
+	}
+
     render(){
         return (
 			<View style = {styles.Container}>
-				
+				<Image source={{
+					uri: this.state.photo,
+				}}
+				style={{
+					width: '100%',
+					height: undefined,
+					aspectRatio: 3/2,
+				}}/>
+				<Button
+					title="Edit Profile Picture"
+					color="#383837"
+					onPress={() => this.props.navigation.navigate("Camera Screen")}
+				/>
+					
 				<Text style = {styles.InputTitle}>First Name</Text>
 				<TextInput style = {styles.TextInput}
 					placeholder="Enter first name"
@@ -125,12 +181,15 @@ export default EditProfileScreen;
 const styles = StyleSheet.create({
 	Container: {
 		position: 'relative',
-		top:'35%',
-		left:'35%',
-		width: '30%',
+		left:'30%',
+		width: '40%',
 	},
 	
 	TextInput: {
-		fontSize: '16px',
+		fontSize: '14px',
+	},
+	InputTitle: {
+		fontSize: '14px',
+		fontWeight: 'bold',
 	},
 });

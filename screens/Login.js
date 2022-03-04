@@ -98,6 +98,8 @@ class LoginScreen extends Component{
 					color="#383837"
 					onPress={() => this.login()}
 				/>
+				
+				<View style = {{margin: '3%'}}></View>
 						
 				<Button
 					title="Sign Up"

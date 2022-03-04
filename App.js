@@ -9,6 +9,9 @@ import LoginScreen from './screens/Login';
 import SignupScreen from './screens/Signup';
 import FriendsScreen from './screens/Friends';
 import EditProfileScreen from './screens/EditProfile';
+import CameraScreen from './screens/CameraScreen';
+import EditPostScreen from './screens/EditPost';
+import ViewPostScreen from './screens/ViewPost';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -26,7 +29,10 @@ function ProfileStacks() {
 	return (
 		<Stack.Navigator>
 			<Stack.Screen name="ProfileStack" component ={ProfileScreen} options={{ title: 'Profile' }}/>
-			<Stack.Screen name="EditProfile" component={EditProfileScreen} />
+			<Stack.Screen name="Edit Profile" component={EditProfileScreen} />
+			<Stack.Screen name="Camera Screen" component={CameraScreen} />
+			<Stack.Screen name="Edit Post" component={EditPostScreen} />
+			<Stack.Screen name="View Post" component={ViewPostScreen} />
 		</Stack.Navigator>
 	);
 }

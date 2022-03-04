@@ -127,6 +127,9 @@ class SignupScreen extends Component{
 					color="#383837"
 					onPress={() => this.signup()}
 				/>
+				
+				<View style = {{margin: '3%'}}></View>
+				
 				<Button
 					title="Go Back"
 					color="#383837"
