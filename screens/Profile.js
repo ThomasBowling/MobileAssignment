@@ -13,8 +13,6 @@ class ProfileScreen extends Component
 			userData: [],
 			postData: [],
 			postText: "",
-			photo: "",
-			postPhoto:""
 		}
 	}
 
@@ -53,6 +51,7 @@ class ProfileScreen extends Component
 			this.setState({
 				userData: responseJson
 			})
+			this.getPhoto(this.state.userData.user_id, 0, "Profile");
 			console.log(this.state.userData);
         })
         .catch((error) => {
@@ -60,10 +59,9 @@ class ProfileScreen extends Component
         })
 	}
 	
-	getPhoto = async () => {
+	getPhoto = async (photo_id, index, type) => {
 		const token = await AsyncStorage.getItem('@session_token');
-		const user_id = await AsyncStorage.getItem('@user_id');
-		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/photo", {
+		return fetch("http://localhost:3333/api/1.0.0/user/" + photo_id + "/photo", {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -75,15 +73,20 @@ class ProfileScreen extends Component
 		})
 		.then((resBlob) => {
 			let data = URL.createObjectURL(resBlob);
-			this.setState({
-				photo: data,
-			});
+			if(type == "Profile")
+			{
+				this.state.userData.user_photo = data;				
+			}
+			else if(type == "Post")
+			{
+				this.state.postData[index].user_photo = data;				
+			}
+			this.setState(this.state);
 		})
 		.catch((error) => {
 			console.log(error)
 		});
 	}
-
 	getPosts = async () => {
 		const token = await AsyncStorage.getItem('@session_token');
 		const user_id = await AsyncStorage.getItem('@user_id');
@@ -109,6 +112,10 @@ class ProfileScreen extends Component
 			this.setState({
 				postData: responseJson
 			})
+			for(var entry in this.state.postData)
+			{
+				this.getPhoto(this.state.postData[entry].author.user_id, entry, "Post")
+			}	
 			console.log(responseJson);
         })
         .catch((error) => {
@@ -195,12 +202,40 @@ class ProfileScreen extends Component
 				}else if(response.status === 403){
 					if(postUser_id == user_id)
 					{
-						throw 'Forbidden- Cant like your own post';
+						throw 'Forbidden- Cant like Posts on your own page';
 					}
 					else
 					{
 						throw 'Forbidden- You have already liked this post';
 					}
+				}else if(response.status === 404){
+					throw 'Not Found';
+				}else{
+					throw 'Something went wrong';
+				}
+			})
+			.catch((error) => {
+				console.log(error);
+			})
+	}
+	
+	unlikePost = async (post_id) => {
+		const token = await AsyncStorage.getItem('@session_token');
+		const user_id = await AsyncStorage.getItem('@user_id');
+		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/post/" + post_id + "/like", {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Authorization':  token
+				},
+			})
+			.then((response) => {
+				if(response.status === 200){
+					this.getPosts();
+				}else if(response.status === 401){
+					throw 'Unauthorised';
+				}else if(response.status === 403){
+					throw 'Forbidden- you have not liked this post';
 				}else if(response.status === 404){
 					throw 'Not Found';
 				}else{
@@ -224,14 +259,13 @@ class ProfileScreen extends Component
 	
 	
 	loginCheck = async () => {
-		const token = await AsyncStorage.getItem('@session_token');
+		const token = await AsyncStorage.getItem('@session_token');			
 		console.log(token);
 		if (token == null) {
 			this.props.navigation.navigate('Login');
 		}
 		else{
 			this.getData();
-			this.getPhoto();
 			this.getPosts();
 			this.setState({
 				isLoading: false
@@ -277,7 +311,7 @@ class ProfileScreen extends Component
 				<View style = {styles.Container}>
 					<View style={{flexDirection: 'row'}}>
 						<Image source={{
-							uri: this.state.photo,
+							uri: this.state.userData.user_photo,
 						}}
 						style={{
 							width: 100,
@@ -332,7 +366,16 @@ class ProfileScreen extends Component
 							return(
 								<View key={data.post_id}>
 									<View style = {styles.postView}>
-										<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.author.first_name} {data.author.last_name}</Text>
+										<View style={{flexDirection: 'row'}}>
+											<Image source={{
+											uri: data.user_photo,
+											}}
+											style={{
+												width: 50,
+												height: 50,
+											}}/>
+											<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.author.first_name} {data.author.last_name}</Text>
+										</View>
 										<Text>{data.text}</Text>
 										<Text>Likes: {data.numLikes}</Text>
 										<Text>{new Date(data.timestamp).toUTCString()}</Text>
@@ -362,6 +405,11 @@ class ProfileScreen extends Component
 													title="Like"
 													color="#383837"
 													onPress={() => this.likePost(data.post_id, data.author.user_id)}
+												/>
+												<Button
+													title="Unlike"
+													color="#383837"
+													onPress={() => this.unlikePost(data.post_id)}
 												/>
 											</View>
 										)}
