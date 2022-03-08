@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, Button, Image} from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-class EditPostScreen extends Component {
+class EditFriendsPostScreen extends Component {
     constructor(props){
         super(props);
 
@@ -26,7 +26,7 @@ class EditPostScreen extends Component {
 	
 	getPost = async () => {
 		const token = await AsyncStorage.getItem('@session_token');
-		const user_id = await AsyncStorage.getItem('@user_id');
+		const user_id = await AsyncStorage.getItem('@friend_user_id');
 		const post_id = await AsyncStorage.getItem('@post_id');
 		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/post/" + post_id, {
 			method: 'GET',
@@ -83,7 +83,7 @@ class EditPostScreen extends Component {
 		
 	editPost = async () => {
 		const token = await AsyncStorage.getItem('@session_token');
-		const user_id = await AsyncStorage.getItem('@user_id');
+		const user_id = await AsyncStorage.getItem('@friend_user_id');
 		const post_id = await AsyncStorage.getItem('@post_id');
 		const time = parseInt(Date.now()/1000);
 		this.data = {
@@ -115,7 +115,7 @@ class EditPostScreen extends Component {
 			})
 			.then(async (responseJson) => {
 					console.log(this.data);
-					this.props.navigation.navigate("ProfileStack");
+					this.props.navigation.navigate("View Friends Profile");
 			})
 			.catch((error) => {
 				console.log(error);
@@ -174,7 +174,7 @@ class EditPostScreen extends Component {
 	};
 }
 
-export default EditPostScreen 
+export default EditFriendsPostScreen 
 
 const styles = StyleSheet.create({
 	Container: {

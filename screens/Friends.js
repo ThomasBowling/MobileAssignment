@@ -267,6 +267,11 @@ class FriendScreen extends Component
 			console.log(error)
 		});
 	}
+	
+	viewProfile = async (friend_id) => {
+		await AsyncStorage.setItem('@friend_user_id', friend_id);
+		this.props.navigation.navigate("View Friends Profile");
+	}
   
 	render(){
 		return (
@@ -313,14 +318,24 @@ class FriendScreen extends Component
 							<View key={data.user_id}>
 								<View style = {styles.postView}>
 									<View style={{flexDirection: 'row'}}>
-										<Image source={{
-											uri: data.user_photo,
-										}}
-										style={{
-											width: 50,
-											height: 50,
-										}}/>
-										<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.user_givenname} {data.user_familyname}</Text>
+										<View style = {{flex: 1, flexDirection: 'row'}}>
+											<Image source={{
+												uri: data.user_photo,
+											}}
+											style={{
+												width: 50,
+												height: 50,
+											}}/>
+											<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.user_givenname} {data.user_familyname}</Text>
+										</View>
+										<View style = {{flex: 1, alignSelf: 'center'}}>
+											<Button
+												title="View Profile"
+												color="#383837"
+												onPress={() => this.viewProfile(data.user_id)}
+											/>
+										</View>
+										<View style = {{flex: 1}}></View>
 									</View>
 								</View>
 							</View>
@@ -338,24 +353,32 @@ class FriendScreen extends Component
 							<View key={data.user_id}>
 								<View style = {styles.postView}>
 									<View style={{flexDirection: 'row'}}>
-										<Image source={{
-											uri: data.user_photo,
-										}}
-										style={{
-											width: 50,
-											height: 50,
-										}}/>
-										<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.first_name} {data.last_name}</Text>
-										<Button
-											title="Accept"
-											color="#383837"
-											onPress={() => this.acceptFriendRequest(data.user_id)}
-										/>
-										<Button
-											title="Reject"
-											color="#383837"
-											onPress={() => this.rejectFriendRequest(data.user_id)}
-										/>
+										<View style = {{flex: 4, flexDirection: 'row'}}>
+											<Image source={{
+												uri: data.user_photo,
+											}}
+											style={{
+												width: 50,
+												height: 50,
+											}}/>
+											<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.first_name} {data.last_name}</Text>
+										</View>
+										<View style = {{flex: 2, alignSelf: 'center'}}>
+											<Button
+												title="Accept"
+												color="#383837"
+												onPress={() => this.acceptFriendRequest(data.user_id)}
+											/>
+										</View>
+										<View style = {{flex: 1}}></View>
+										<View style = {{flex: 2, alignSelf: 'center'}}>
+											<Button
+												title="Reject"
+												color="#383837"
+												onPress={() => this.rejectFriendRequest(data.user_id)}
+											/>
+										</View>
+										<View style = {{flex: 1}}></View>
 									</View>
 								</View>
 							</View>

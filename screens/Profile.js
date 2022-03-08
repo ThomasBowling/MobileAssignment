@@ -87,6 +87,7 @@ class ProfileScreen extends Component
 			console.log(error)
 		});
 	}
+
 	getPosts = async () => {
 		const token = await AsyncStorage.getItem('@session_token');
 		const user_id = await AsyncStorage.getItem('@user_id');
@@ -150,6 +151,9 @@ class ProfileScreen extends Component
 			})
 			.then(async (responseJson) => {
 					this.getPosts();
+					this.setState({
+						postText: "",
+					})
 			})
 			.catch((error) => {
 				console.log(error);
@@ -173,69 +177,6 @@ class ProfileScreen extends Component
 					throw 'Unauthorised';
 				}else if(response.status === 403){
 					throw 'Forbidden- can only delete own posts';
-				}else if(response.status === 404){
-					throw 'Not Found';
-				}else{
-					throw 'Something went wrong';
-				}
-			})
-			.catch((error) => {
-				console.log(error);
-			})
-	}
-	
-	likePost = async (post_id, postUser_id) => {
-		const token = await AsyncStorage.getItem('@session_token');
-		const user_id = await AsyncStorage.getItem('@user_id');
-		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/post/" + post_id + "/like", {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-Authorization':  token
-				},
-			})
-			.then((response) => {
-				if(response.status === 200){
-					this.getPosts();
-				}else if(response.status === 401){
-					throw 'Unauthorised';
-				}else if(response.status === 403){
-					if(postUser_id == user_id)
-					{
-						throw 'Forbidden- Cant like Posts on your own page';
-					}
-					else
-					{
-						throw 'Forbidden- You have already liked this post';
-					}
-				}else if(response.status === 404){
-					throw 'Not Found';
-				}else{
-					throw 'Something went wrong';
-				}
-			})
-			.catch((error) => {
-				console.log(error);
-			})
-	}
-	
-	unlikePost = async (post_id) => {
-		const token = await AsyncStorage.getItem('@session_token');
-		const user_id = await AsyncStorage.getItem('@user_id');
-		return fetch("http://localhost:3333/api/1.0.0/user/" + user_id + "/post/" + post_id + "/like", {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-Authorization':  token
-				},
-			})
-			.then((response) => {
-				if(response.status === 200){
-					this.getPosts();
-				}else if(response.status === 401){
-					throw 'Unauthorised';
-				}else if(response.status === 403){
-					throw 'Forbidden- you have not liked this post';
 				}else if(response.status === 404){
 					throw 'Not Found';
 				}else{
@@ -277,6 +218,8 @@ class ProfileScreen extends Component
         let token = await AsyncStorage.getItem('@session_token');
         await AsyncStorage.removeItem('@session_token');
 		await AsyncStorage.removeItem('@user_id');
+		await AsyncStorage.removeItem('@post_id');
+		await AsyncStorage.removeItem('@friend_user_id');
         return fetch("http://localhost:3333/api/1.0.0/logout", {
             method: 'POST',
             headers: {
@@ -361,6 +304,8 @@ class ProfileScreen extends Component
 						onPress={() => this.sendPost()}
 					/>
 					
+					<View style = {{margin: '1%'}}></View>
+					
 					<ScrollView>
 						{ this.state.postData.map((data) => {
 							return(
@@ -374,24 +319,34 @@ class ProfileScreen extends Component
 												width: 50,
 												height: 50,
 											}}/>
-											<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.author.first_name} {data.author.last_name}</Text>
+											<View style = {{flex: 1, paddingLeft: '1%'}}>
+												<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{data.author.first_name} {data.author.last_name}</Text>
+												<Text>{data.text}</Text>
+												<Text>Likes: {data.numLikes}</Text>
+												<Text>{new Date(data.timestamp).toUTCString()}</Text>
+											</View>
 										</View>
-										<Text>{data.text}</Text>
-										<Text>Likes: {data.numLikes}</Text>
-										<Text>{new Date(data.timestamp).toUTCString()}</Text>
 										{(data.author.user_id == this.state.userData.user_id) ? (
 											<View>
-												<Button
-													title="Delete"
-													color="#383837"
-													onPress={() => this.deletePost(data.post_id)}
-												/>
-																							
-												<Button
-													title="Update"
-													color="#383837"
-													onPress={() => this.editPost(data.post_id)}
-												/>
+												<View style={{flexDirection: 'row'}}>
+													<View style = {{flex: 20}}>
+														<Button
+															title="Delete"
+															color="#383837"
+															onPress={() => this.deletePost(data.post_id)}
+														/>
+													</View>
+													
+													<View style = {{flex: 1}}></View>
+													
+													<View style = {{flex: 20}}>													
+														<Button
+															title="Update"
+															color="#383837"
+															onPress={() => this.editPost(data.post_id)}
+														/>
+													</View>
+												</View>
 											</View>
 										) : (
 											<View>
@@ -399,17 +354,6 @@ class ProfileScreen extends Component
 													title="View Post"
 													color="#383837"
 													onPress={() => this.viewPost(data.post_id)}
-												/>
-												
-												<Button
-													title="Like"
-													color="#383837"
-													onPress={() => this.likePost(data.post_id, data.author.user_id)}
-												/>
-												<Button
-													title="Unlike"
-													color="#383837"
-													onPress={() => this.unlikePost(data.post_id)}
 												/>
 											</View>
 										)}

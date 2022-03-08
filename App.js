@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { NavigationContainer} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons'; 
 import 'react-native-gesture-handler';
 
 import ProfileScreen from './screens/Profile';
@@ -12,6 +14,9 @@ import EditProfileScreen from './screens/EditProfile';
 import CameraScreen from './screens/CameraScreen';
 import EditPostScreen from './screens/EditPost';
 import ViewPostScreen from './screens/ViewPost';
+import EditFriendsPostScreen from './screens/EditFriendPost';
+import ViewFriendsPostScreen from './screens/ViewFriendPost';
+import FriendsProfileScreen from './screens/FriendProfile';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -19,8 +24,18 @@ const Stack = createNativeStackNavigator();
 function ProfileTabs() {
 	return (
 		<Tab.Navigator screenOptions={{ headerShown: false }}>
-			<Tab.Screen name="ProfileTab" component ={ProfileStacks} options={{ title: 'Profile' }}/>
-			<Tab.Screen name="FriendsTab" component={FriendsStacks} options={{ title: 'Friends' }}/>
+			<Tab.Screen name="ProfileTab" component={ProfileStacks} options=
+				{{ title: 'Profile' , unmountOnBlur: true, tabBarIcon: ({ color, size}) => (
+					<FontAwesome name="user" size={24} color="black" />
+					),
+				}}
+			/>
+			<Tab.Screen name="FriendsTab" component={FriendsStacks} options=
+				{{ title: 'Friends' , unmountOnBlur: true, tabBarIcon: ({ color, size}) => (
+					<FontAwesome5 name="user-friends" size={24} color="black" />
+					),
+				}}
+			/>
 		</Tab.Navigator>
 	);
 }
@@ -41,6 +56,9 @@ function FriendsStacks() {
 	return (
 		<Stack.Navigator>
 			<Stack.Screen name="FriendsStack" component ={FriendsScreen} options={{ title: 'Friends' }}/>
+			<Stack.Screen name="View Friends Profile" component ={FriendsProfileScreen} />
+			<Stack.Screen name="Edit Friends Post" component={EditFriendsPostScreen} />
+			<Stack.Screen name="View Friends Post" component={ViewFriendsPostScreen} />
 		</Stack.Navigator>
 	);
 }

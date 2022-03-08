@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, Button} from 'react-native';
+import { Text, View, StyleSheet, Button, Image} from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-class EditPostScreen extends Component {
+class ViewPostScreen extends Component {
     constructor(props){
         super(props);
 
@@ -47,13 +47,37 @@ class EditPostScreen extends Component {
         })
         .then((responseJson) => {
 			this.setState({
-				postData: responseJson,
-				isLoading: false
+				postData: responseJson
 			})
+			this.getPhoto(this.state.postData.author.user_id);
         })
         .catch((error) => {
             console.log(error);
         })
+	}
+	
+	getPhoto = async (photo_id) => {
+		const token = await AsyncStorage.getItem('@session_token');
+		return fetch("http://localhost:3333/api/1.0.0/user/" + photo_id + "/photo", {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Authorization':  token
+			}
+		})
+		.then((res) => {
+			return res.blob();
+		})
+		.then((resBlob) => {
+			let data = URL.createObjectURL(resBlob);
+			this.state.postData.user_photo = data;				
+			this.setState({
+				isLoading: false
+			})
+		})
+		.catch((error) => {
+			console.log(error)
+		});
 	}
 	
 	render(){
@@ -68,10 +92,21 @@ class EditPostScreen extends Component {
 			return(
 				<View style = {styles.Container}>
 					<View style = {styles.postView}>
-						<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{this.state.postData.author.first_name} {this.state.postData.author.last_name}</Text>
-						<Text>{this.state.postData.text}</Text>
-						<Text>Likes: {this.state.postData.numLikes}</Text>
-						<Text>{new Date(this.state.postData.timestamp).toUTCString()}</Text>
+						<View style={{flexDirection: 'row'}}>
+							<Image source={{
+							uri: this.state.postData.user_photo,
+							}}
+							style={{
+								width: 50,
+								height: 50,
+							}}/>
+							<View style = {{flex: 1, paddingLeft: '1%'}}>
+								<Text style ={{fontSize: '14px',fontWeight: 'bold'}}>{this.state.postData.author.first_name} {this.state.postData.author.last_name}</Text>
+								<Text>{this.state.postData.text}</Text>
+								<Text>Likes: {this.state.postData.numLikes}</Text>
+								<Text>{new Date(this.state.postData.timestamp).toUTCString()}</Text>
+							</View>
+						</View>
 					</View>
 				</View>
 			)
@@ -79,7 +114,7 @@ class EditPostScreen extends Component {
 	};
 }
 
-export default EditPostScreen 
+export default ViewPostScreen 
 
 const styles = StyleSheet.create({
 	Container: {
