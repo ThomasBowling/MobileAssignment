@@ -3,7 +3,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import 'react-native-gesture-handler';
 
 import ProfileScreen from './screens/Profile';
@@ -17,6 +17,9 @@ import ViewPostScreen from './screens/ViewPost';
 import EditFriendsPostScreen from './screens/EditFriendPost';
 import ViewFriendsPostScreen from './screens/ViewFriendPost';
 import FriendsProfileScreen from './screens/FriendProfile';
+import DraftScreen from './screens/Drafts';
+import EditDraftScreen from './screens/DraftEdit';
+import ScheduleDraftScreen from './screens/DraftSchedule';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -44,9 +47,30 @@ function FriendsStacks() {
   );
 }
 
+function DraftStacks() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="DraftStacks" component={DraftScreen} options={{ title: 'Drafts' }} />
+      <Stack.Screen name="Edit Draft" component={EditDraftScreen} />
+      <Stack.Screen name="Schedule Draft" component={ScheduleDraftScreen} />
+    </Stack.Navigator>
+  );
+}
+
 function ProfileTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator initialRouteName="ProfileTab" screenOptions={{ headerShown: false }}>
+      <Tab.Screen
+        name="FriendsTab"
+        component={FriendsStacks}
+        options={{
+          title: 'Friends',
+          unmountOnBlur: true,
+          tabBarIcon: () => (
+            <FontAwesome5 name="user-friends" size={24} color="black" />
+          ),
+        }}
+      />
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStacks}
@@ -59,13 +83,13 @@ function ProfileTabs() {
         }}
       />
       <Tab.Screen
-        name="FriendsTab"
-        component={FriendsStacks}
+        name="DraftTab"
+        component={DraftStacks}
         options={{
-          title: 'Friends',
+          title: 'Drafts',
           unmountOnBlur: true,
           tabBarIcon: () => (
-            <FontAwesome5 name="user-friends" size={24} color="black" />
+            <MaterialIcons name="drafts" size={24} color="black" />
           ),
         }}
       />

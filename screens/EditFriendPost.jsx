@@ -114,10 +114,8 @@ class EditFriendsPostScreen extends Component {
       const token = await AsyncStorage.getItem('@session_token');
       const userId = await AsyncStorage.getItem('@friend_user_id');
       const postId = await AsyncStorage.getItem('@post_id');
-      const time = parseInt(Date.now() / 1000, 10);
       this.data = {
         text: this.state.newText,
-        timestamp: time,
       };
       return fetch(`http://localhost:3333/api/1.0.0/user/${userId}/post/${postId}`, {
         method: 'PATCH',

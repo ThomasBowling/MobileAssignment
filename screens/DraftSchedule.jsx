@@ -29,21 +29,22 @@ const styles = StyleSheet.create({
   },
 });
 
-class EditPostScreen extends Component {
+class DraftScheduleScreen extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
       isLoading: true,
-      oldPost: [],
-      newText: '',
+      oldDraft: [],
+      userData: [],
+      scheduleTime: null,
       ErrorSendPost: '',
     };
   }
 
   componentDidMount() {
     this.unsubscribe = this.props.navigation.addListener('focus', () => {
-      this.getPost();
+      this.getData();
     });
   }
 
@@ -51,11 +52,10 @@ class EditPostScreen extends Component {
     this.unsubscribe();
   }
 
-  getPost = async () => {
+  getData = async () => {
     const token = await AsyncStorage.getItem('@session_token');
     const userId = await AsyncStorage.getItem('@user_id');
-    const postId = await AsyncStorage.getItem('@post_id');
-    return fetch(`http://localhost:3333/api/1.0.0/user/${userId}/post/${postId}`, {
+    return fetch(`http://localhost:3333/api/1.0.0/user/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -74,9 +74,11 @@ class EditPostScreen extends Component {
       })
       .then((responseJson) => {
         this.setState({
-          oldPost: responseJson,
+          userData: responseJson,
         });
-        this.getPhoto(this.state.oldPost.author.user_id);
+        this.getPhoto(this.state.userData.user_id);
+        console.log(this.state.userData);
+        this.getDraft();
       })
       .catch((error) => {
         console.log(error);
@@ -95,61 +97,50 @@ class EditPostScreen extends Component {
       .then((res) => res.blob())
       .then((resBlob) => {
         const data = URL.createObjectURL(resBlob);
-        this.state.oldPost.user_photo = data;
-        this.setState({
-          ErrorSendPost: '',
-          isLoading: false,
-        });
+        this.state.userData.user_photo = data;
+        // eslint-disable-next-line react/no-access-state-in-setstate
+        this.setState(this.state);
       })
       .catch((error) => {
         console.log(error);
       });
   };
 
-  editPost = async () => {
-    if (this.state.newText.length < 1) {
-      this.setState({ ErrorSendPost: 'Post cant be blank' });
+  getDraft = async () => {
+    let drafts = await AsyncStorage.getItem('@drafts');
+    drafts = JSON.parse(drafts);
+    const draftId = parseInt(await AsyncStorage.getItem('@draft_id'), 10);
+    const draft = drafts.find((entry) => entry.draft_id === draftId);
+    this.setState({
+      oldDraft: draft,
+      isLoading: false,
+    });
+  };
+
+  scheduleDraft = async () => {
+    let testDate = this.state.scheduleTime;
+    testDate = `${testDate.replace(' ', 'T')}Z`;
+    const validateDate = Date.parse(testDate);
+    console.log(validateDate);
+    if (Number.isNaN(validateDate)) {
+      this.setState({ ErrorSendPost: 'Invalid date, please follow the format' });
     } else {
-      this.setState({ ErrorSendPost: '' });
-      const token = await AsyncStorage.getItem('@session_token');
-      const userId = await AsyncStorage.getItem('@user_id');
-      const postId = await AsyncStorage.getItem('@post_id');
-      this.data = {
-        text: this.state.newText,
-      };
-      return fetch(`http://localhost:3333/api/1.0.0/user/${userId}/post/${postId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Authorization': token,
-        },
-        body: JSON.stringify(this.data),
-      })
-        .then((response) => {
-          if (response.status === 200) {
-            return 'OK';
-          } if (response.status === 400) {
-            throw new Error('Bad Request');
-          } else if (response.status === 401) {
-            throw new Error('Unauthorised');
-          } else if (response.status === 403) {
-            throw new Error('Forbidden- can only edit own posts');
-          } else if (response.status === 404) {
-            throw new Error('Not Found');
-          } else {
-            throw new Error('Something went wrong');
-          }
-        })
-        .then(async () => {
-          console.log(this.data);
-          this.setState({ ErrorSendPost: '' });
-          this.props.navigation.navigate('ProfileStack');
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      const scheduleTime = new Date(testDate);
+      const timeNow = new Date();
+      if (scheduleTime < timeNow) {
+        this.setState({ ErrorSendPost: 'This Date/Time has passed, Pick a future Date/Time' });
+      } else {
+        this.setState({ ErrorSendPost: '' });
+        let drafts = await AsyncStorage.getItem('@drafts');
+        const draftId = parseInt(await AsyncStorage.getItem('@draft_id'), 10);
+        drafts = JSON.parse(drafts);
+        const draftIndex = drafts.findIndex(((entry) => entry.draft_id === draftId));
+        console.log(draftIndex);
+        drafts[draftIndex].schedule = scheduleTime;
+        await AsyncStorage.setItem('@drafts', JSON.stringify(drafts));
+        this.props.navigation.navigate('DraftStacks');
+      }
     }
-    return undefined;
   };
 
   render() {
@@ -167,7 +158,7 @@ class EditPostScreen extends Component {
           <View style={{ flexDirection: 'row' }}>
             <Image
               source={{
-                uri: this.state.oldPost.user_photo,
+                uri: this.state.userData.user_photo,
               }}
               style={{
                 width: 50,
@@ -176,16 +167,18 @@ class EditPostScreen extends Component {
             />
             <View style={{ flex: 1, paddingLeft: '1%' }}>
               <Text accessibilityRole="text" style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                {this.state.oldPost.author.first_name}
+                {this.state.userData.first_name}
                 {' '}
-                {this.state.oldPost.author.last_name}
+                {this.state.userData.last_name}
               </Text>
-              <Text accessibilityRole="text">{this.state.oldPost.text}</Text>
-              <Text accessibilityRole="text">
-                Likes:
-                {this.state.oldPost.numLikes}
+              <Text accessibilityRole="text">{this.state.oldDraft.text}</Text>
+              <Text accessibilityRole="text" style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                Posting on:
+                {this.state.oldDraft.profile.first_name}
+                {' '}
+                {this.state.oldDraft.profile.last_name}
+                &apos;s profile
               </Text>
-              <Text accessibilityRole="text">{new Date(this.state.oldPost.timestamp).toUTCString()}</Text>
             </View>
           </View>
         </View>
@@ -195,10 +188,10 @@ class EditPostScreen extends Component {
         <TextInput
           accessibilityRole="search"
           style={styles.TextInput}
-          placeholder={this.state.oldPost.text}
+          placeholder="Enter a date following this format: YYYY-MM-DD HH:MM:SS"
           textAlignVertical="top"
           multiline="true"
-          onChangeText={(newText) => this.setState({ newText })}
+          onChangeText={(scheduleTime) => this.setState({ scheduleTime })}
           value={this.state.postText}
         />
 
@@ -206,9 +199,9 @@ class EditPostScreen extends Component {
 
         <Button
           accessibilityRole="button"
-          title="Edit Post"
+          title="Set Schedule"
           color="#383837"
-          onPress={() => this.editPost()}
+          onPress={() => this.scheduleDraft()}
         />
         <Text style={styles.Error}>{this.state.ErrorSendPost}</Text>
       </View>
@@ -216,4 +209,4 @@ class EditPostScreen extends Component {
   }
 }
 
-export default EditPostScreen;
+export default DraftScheduleScreen;

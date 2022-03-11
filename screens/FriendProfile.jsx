@@ -124,6 +124,7 @@ class FriendProfileScreen extends Component {
   };
 
   getPosts = async () => {
+    this.checkSchedule();
     const token = await AsyncStorage.getItem('@session_token');
     const userId = await AsyncStorage.getItem('@friend_user_id');
     return fetch(`http://localhost:3333/api/1.0.0/user/${userId}/post`, {
@@ -199,6 +200,69 @@ class FriendProfileScreen extends Component {
         });
     }
     return undefined;
+  };
+
+  saveDraft = async () => {
+    if (this.state.postText.length < 1) {
+      this.setState({ ErrorSendPost: 'Post cant be blank' });
+    } else {
+      this.setState({ ErrorSendPost: '' });
+      let drafts = await AsyncStorage.getItem('@drafts');
+      drafts = JSON.parse(drafts);
+      const userId = await AsyncStorage.getItem('@user_id');
+      const friendUserId = await AsyncStorage.getItem('@friend_user_id');
+      this.profileName = {
+        user_id: friendUserId,
+        first_name: this.state.userData.first_name,
+        last_name: this.state.userData.last_name,
+      };
+      if (drafts === null || drafts.length === 0) {
+        this.data = {
+          draft_id: 1,
+          text: this.state.postText,
+          author_id: userId,
+          profile: this.profileName,
+          schedule: null,
+        };
+        drafts = [this.data];
+      } else {
+        this.data = {
+          draft_id: (drafts[drafts.length - 1].draft_id + 1),
+          text: this.state.postText,
+          author_id: userId,
+          profile: this.profileName,
+        };
+        drafts[drafts.length] = this.data;
+        console.log(drafts);
+      }
+      await AsyncStorage.setItem('@drafts', JSON.stringify(drafts));
+      this.setState({ postText: '' });
+    }
+  };
+
+  checkSchedule = async () => {
+    let drafts = await AsyncStorage.getItem('@drafts');
+    const userId = await AsyncStorage.getItem('@friend_user_id');
+    drafts = JSON.parse(drafts);
+    for (const entry in drafts) {
+      if (drafts[entry].profile.user_id === userId && drafts[entry].schedule !== null) {
+        const scheduleTime = new Date(drafts[entry].schedule);
+        const timeNow = new Date();
+        if (scheduleTime < timeNow) {
+          this.setState({ postText: drafts[entry].text });
+          this.deleteDraft(drafts[entry].draft_id);
+        }
+      }
+    }
+  };
+
+  deleteDraft = async (draftId) => {
+    let drafts = await AsyncStorage.getItem('@drafts');
+    drafts = JSON.parse(drafts);
+    drafts = drafts.filter((entry) => entry.draft_id !== draftId);
+    console.log(drafts);
+    await AsyncStorage.setItem('@drafts', JSON.stringify(drafts));
+    this.sendPost();
   };
 
   deletePost = async (postId) => {
@@ -361,12 +425,25 @@ class FriendProfileScreen extends Component {
 
         <View style={{ margin: '1%' }} />
 
-        <Button
-          title="Send Post"
-          accessibilityRole="button"
-          color="#383837"
-          onPress={() => this.sendPost()}
-        />
+        <View style={{ flexDirection: 'row' }}>
+          <View style={{ flex: 20 }}>
+            <Button
+              title="Send Post"
+              accessibilityRole="button"
+              color="#383837"
+              onPress={() => this.sendPost()}
+            />
+          </View>
+          <View style={{ flex: 1 }} />
+          <View style={{ flex: 20 }}>
+            <Button
+              title="Save Draft"
+              accessibilityRole="button"
+              color="#383837"
+              onPress={() => this.saveDraft()}
+            />
+          </View>
+        </View>
 
         <Text accessibilityRole="text" style={styles.Error}>{this.state.ErrorSendPost}</Text>
 
